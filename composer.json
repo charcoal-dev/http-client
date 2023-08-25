@@ -14,7 +14,9 @@
   ],
   "require": {
     "php": "^8.1",
-    "charcoal-dev/http-commons": "dev-main"
+    "ext-curl": "*",
+    "charcoal-dev/http-commons": "dev-main",
+    "charcoal-dev/oop-base": "dev-main"
   },
   "autoload": {
     "psr-4": {
