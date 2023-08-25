@@ -1,0 +1,27 @@
+{
+  "name": "charcoal-dev/http-client",
+  "description": "HTTP Client for Charcoal Apps",
+  "type": "library",
+  "homepage": "https://github.com/charcoal-dev/http-client",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Furqan A. Siddiqui",
+      "email": "hello@furqansiddiqui.com",
+      "homepage": "https://www.furqansiddiqui.com",
+      "role": "Author"
+    }
+  ],
+  "require": {
+    "php": "^8.1",
+    "charcoal-dev/http-commons": "dev-main"
+  },
+  "autoload": {
+    "psr-4": {
+      "Charcoal\\HTTP\\Client\\": [
+        "src"
+      ]
+    }
+  },
+  "minimum-stability": "dev"
+}
