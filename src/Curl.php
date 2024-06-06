@@ -39,7 +39,7 @@ class Curl
     public static function supportSslTls(): bool
     {
         if (!is_bool(static::$tlsSupport)) {
-            static::$tlsSupport = !(curl_version()["features"] & CURL_VERSION_SSL);
+            static::$tlsSupport = (bool)((curl_version()["features"] & CURL_VERSION_SSL));
         }
 
         return static::$tlsSupport;

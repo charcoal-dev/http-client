@@ -52,6 +52,8 @@ class Request
     private ?int $connectTimeOut = null;
     private ?int $httpVersion = null;
     private ?string $userAgent = null;
+    private ?string $proxyHost = null;
+    private ?int $proxyPort = null;
 
     use NoDumpTrait;
     use NotSerializableTrait;
@@ -171,6 +173,18 @@ class Request
     }
 
     /**
+     * @param string $host
+     * @param int|null $port
+     * @return $this
+     */
+    public function useProxy(string $host, ?int $port = null): static
+    {
+        $this->proxyHost = $host;
+        $this->proxyPort = $port;
+        return $this;
+    }
+
+    /**
      * @return \Charcoal\HTTP\Client\Response
      * @throws \Charcoal\HTTP\Client\Exception\ResponseException
      */
@@ -180,6 +194,11 @@ class Request
         curl_setopt($ch, CURLOPT_URL, $this->url->complete); // Set URL
         if ($this->httpVersion) {
             curl_setopt($ch, CURLOPT_HTTP_VERSION, $this->httpVersion);
+        }
+
+        // Proxy Server?
+        if ($this->proxyHost) {
+            curl_setopt($ch, CURLOPT_PROXY, $this->proxyHost . ($this->proxyPort ? ":" . $this->proxyPort : ""));
         }
 
         // SSL?
