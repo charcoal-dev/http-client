@@ -54,6 +54,8 @@ class Request
     private ?string $userAgent = null;
     private ?string $proxyHost = null;
     private ?int $proxyPort = null;
+    private ?string $proxyAuthUsername = null;
+    private ?string $proxyAuthPassword = null;
 
     use NoDumpTrait;
     use NotSerializableTrait;
@@ -185,6 +187,18 @@ class Request
     }
 
     /**
+     * @param string $username
+     * @param string $password
+     * @return $this
+     */
+    public function useProxyCredentials(string $username, string $password): static
+    {
+        $this->proxyAuthUsername = $username;
+        $this->proxyAuthPassword = $password;
+        return $this;
+    }
+
+    /**
      * @return \Charcoal\HTTP\Client\Response
      * @throws \Charcoal\HTTP\Client\Exception\ResponseException
      */
@@ -199,6 +213,10 @@ class Request
         // Proxy Server?
         if ($this->proxyHost) {
             curl_setopt($ch, CURLOPT_PROXY, $this->proxyHost . ($this->proxyPort ? ":" . $this->proxyPort : ""));
+            if ($this->proxyAuthUsername) {
+                curl_setopt($ch, CURLOPT_PROXYAUTH, CURLAUTH_BASIC);
+                curl_setopt($ch, CURLOPT_PROXYUSERPWD, $this->proxyAuthUsername . ":" . $this->proxyAuthPassword);
+            }
         }
 
         // SSL?
