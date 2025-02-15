@@ -12,13 +12,13 @@
 
 declare(strict_types=1);
 
-namespace Charcoal\HTTP\Client;
+namespace Charcoal\Http\Client;
 
-use Charcoal\HTTP\Client\Exception\SecureRequestException;
+use Charcoal\Http\Client\Exception\SecureRequestException;
 
 /**
  * Class SslContext
- * @package Charcoal\HTTP\Client
+ * @package Charcoal\Http\Client
  */
 class SslContext
 {
@@ -36,7 +36,7 @@ class SslContext
     private ?string $certAuthorityPath = null;
 
     /**
-     * @throws \Charcoal\HTTP\Client\Exception\SecureRequestException
+     * @throws \Charcoal\Http\Client\Exception\SecureRequestException
      */
     public function __construct()
     {
@@ -59,7 +59,7 @@ class SslContext
      * @param string $file
      * @param string|null $password
      * @return $this
-     * @throws \Charcoal\HTTP\Client\Exception\SecureRequestException
+     * @throws \Charcoal\Http\Client\Exception\SecureRequestException
      */
     public function certificate(string $file, ?string $password = null): static
     {
@@ -77,7 +77,7 @@ class SslContext
      * @param string $file
      * @param string|null $password
      * @return $this
-     * @throws \Charcoal\HTTP\Client\Exception\SecureRequestException
+     * @throws \Charcoal\Http\Client\Exception\SecureRequestException
      */
     public function privateKey(string $file, ?string $password = null): static
     {
@@ -94,7 +94,7 @@ class SslContext
     /**
      * @param string $path
      * @return $this
-     * @throws \Charcoal\HTTP\Client\Exception\SecureRequestException
+     * @throws \Charcoal\Http\Client\Exception\SecureRequestException
      */
     public function ca(string $path): static
     {
@@ -110,7 +110,7 @@ class SslContext
     /**
      * @param string $path
      * @return $this
-     * @throws \Charcoal\HTTP\Client\Exception\SecureRequestException
+     * @throws \Charcoal\Http\Client\Exception\SecureRequestException
      */
     public function certificateAuthority(string $path): static
     {

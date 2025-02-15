@@ -12,11 +12,11 @@
 
 declare(strict_types=1);
 
-namespace Charcoal\HTTP\Client\Exception;
+namespace Charcoal\Http\Client\Exception;
 
 /**
  * Class SecureRequestException
- * @package Charcoal\HTTP\Client\Exception
+ * @package Charcoal\Http\Client\Exception
  */
 class SecureRequestException extends RequestException
 {

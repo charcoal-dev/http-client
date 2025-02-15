@@ -12,11 +12,11 @@
 
 declare(strict_types=1);
 
-namespace Charcoal\HTTP\Client\Authorization;
+namespace Charcoal\Http\Client\Authorization;
 
 /**
  * Class BasicAuth
- * @package Charcoal\HTTP\Client\Authorization
+ * @package Charcoal\Http\Client\Authorization
  */
 class BasicAuth extends AbstractAuthorization
 {

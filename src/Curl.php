@@ -12,11 +12,11 @@
 
 declare(strict_types=1);
 
-namespace Charcoal\HTTP\Client;
+namespace Charcoal\Http\Client;
 
 /**
  * Class Curl
- * @package Charcoal\HTTP\Client
+ * @package Charcoal\Http\Client
  */
 class Curl
 {

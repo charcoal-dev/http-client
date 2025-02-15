@@ -12,25 +12,25 @@
 
 declare(strict_types=1);
 
-namespace Charcoal\HTTP\Client;
+namespace Charcoal\Http\Client;
 
 use Charcoal\Buffers\Buffer;
-use Charcoal\HTTP\Client\Authorization\AbstractAuthorization;
-use Charcoal\HTTP\Client\Exception\RequestException;
-use Charcoal\HTTP\Client\Exception\ResponseException;
-use Charcoal\HTTP\Commons\Headers;
-use Charcoal\HTTP\Commons\HttpMethod;
-use Charcoal\HTTP\Commons\ReadOnlyPayload;
-use Charcoal\HTTP\Commons\UrlInfo;
-use Charcoal\HTTP\Commons\WritableHeaders;
-use Charcoal\HTTP\Commons\WritablePayload;
+use Charcoal\Http\Client\Authorization\AbstractAuthorization;
+use Charcoal\Http\Client\Exception\RequestException;
+use Charcoal\Http\Client\Exception\ResponseException;
+use Charcoal\Http\Commons\Headers;
+use Charcoal\Http\Commons\HttpMethod;
+use Charcoal\Http\Commons\ReadOnlyPayload;
+use Charcoal\Http\Commons\UrlInfo;
+use Charcoal\Http\Commons\WritableHeaders;
+use Charcoal\Http\Commons\WritablePayload;
 use Charcoal\OOP\Traits\NoDumpTrait;
 use Charcoal\OOP\Traits\NotCloneableTrait;
 use Charcoal\OOP\Traits\NotSerializableTrait;
 
 /**
  * Class Request
- * @package Charcoal\HTTP\Client
+ * @package Charcoal\Http\Client
  */
 class Request
 {
@@ -62,9 +62,9 @@ class Request
     use NotCloneableTrait;
 
     /**
-     * @param \Charcoal\HTTP\Commons\HttpMethod $method
+     * @param \Charcoal\Http\Commons\HttpMethod $method
      * @param string $url
-     * @throws \Charcoal\HTTP\Client\Exception\RequestException
+     * @throws \Charcoal\Http\Client\Exception\RequestException
      */
     public function __construct(
         public readonly HttpMethod $method,
@@ -82,7 +82,7 @@ class Request
     }
 
     /**
-     * @param \Charcoal\HTTP\Client\Authorization\AbstractAuthorization $auth
+     * @param \Charcoal\Http\Client\Authorization\AbstractAuthorization $auth
      * @return $this
      */
     public function useAuthorization(AbstractAuthorization $auth): static
@@ -199,8 +199,8 @@ class Request
     }
 
     /**
-     * @return \Charcoal\HTTP\Client\Response
-     * @throws \Charcoal\HTTP\Client\Exception\ResponseException
+     * @return \Charcoal\Http\Client\Response
+     * @throws \Charcoal\Http\Client\Exception\ResponseException
      */
     public function send(): Response
     {

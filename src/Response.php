@@ -12,21 +12,21 @@
 
 declare(strict_types=1);
 
-namespace Charcoal\HTTP\Client;
+namespace Charcoal\Http\Client;
 
 use Charcoal\Buffers\Buffer;
-use Charcoal\HTTP\Commons\Headers;
-use Charcoal\HTTP\Commons\ReadOnlyPayload;
+use Charcoal\Http\Commons\Headers;
+use Charcoal\Http\Commons\ReadOnlyPayload;
 
 /**
  * Class Response
- * @package Charcoal\HTTP\Client
+ * @package Charcoal\Http\Client
  */
 class Response
 {
     /**
-     * @param \Charcoal\HTTP\Commons\Headers $headers
-     * @param \Charcoal\HTTP\Commons\ReadOnlyPayload $payload
+     * @param \Charcoal\Http\Commons\Headers $headers
+     * @param \Charcoal\Http\Commons\ReadOnlyPayload $payload
      * @param \Charcoal\Buffers\Buffer $body
      * @param int $statusCode
      */
