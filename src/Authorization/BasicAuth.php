@@ -1,43 +1,38 @@
 <?php
-/*
- * This file is a part of "charcoal-dev/http-client" package.
- * https://github.com/charcoal-dev/http-client
- *
- * Copyright (c) Furqan A. Siddiqui <hello@furqansiddiqui.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code or visit following link:
- * https://github.com/charcoal-dev/http-client/blob/main/LICENSE
+/**
+ * Part of the "charcoal-dev/http-client" package.
+ * @link https://github.com/charcoal-dev/http-client
  */
 
 declare(strict_types=1);
 
 namespace Charcoal\Http\Client\Authorization;
 
+use Charcoal\Http\Client\Contracts\ClientAuthInterface;
+use Charcoal\Http\Client\Request;
+
 /**
  * Class BasicAuth
  * @package Charcoal\Http\Client\Authorization
  */
-class BasicAuth extends AbstractAuthorization
+readonly class BasicAuth implements ClientAuthInterface
 {
-    /**
-     * @param string $username
-     * @param string $password
-     */
     public function __construct(
-        public readonly string $username,
-        public readonly string $password
+        #[\SensitiveParameter]
+        public string $username,
+        #[\SensitiveParameter]
+        public string $password
     )
     {
     }
 
     /**
-     * @param \CurlHandle $ch
+     * @param Request $request
      * @return void
      */
-    public function registerCh(\CurlHandle $ch): void
+    public function setCredentials(Request $request): void
     {
-        curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-        curl_setopt($ch, CURLOPT_USERPWD, sprintf('%s:%s', $this->username, $this->password));
+        $request->headers->set("Authorization", "Basic " . base64_encode(
+                sprintf("%s:%s", $this->username, $this->password)));
     }
 }
