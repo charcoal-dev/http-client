@@ -1,299 +1,157 @@
 <?php
-/*
- * This file is a part of "charcoal-dev/http-client" package.
- * https://github.com/charcoal-dev/http-client
- *
- * Copyright (c) Furqan A. Siddiqui <hello@furqansiddiqui.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code or visit following link:
- * https://github.com/charcoal-dev/http-client/blob/main/LICENSE
+/**
+ * Part of the "charcoal-dev/http-client" package.
+ * @link https://github.com/charcoal-dev/http-client
  */
 
 declare(strict_types=1);
 
 namespace Charcoal\Http\Client;
 
+use Charcoal\Base\Enums\ExceptionAction;
+use Charcoal\Base\Support\Data\BatchEnvelope;
+use Charcoal\Base\Support\Helpers\ObjectHelper;
 use Charcoal\Buffers\Buffer;
-use Charcoal\Http\Client\Authorization\AbstractAuthorization;
+use Charcoal\Http\Client\Encoding\RequestFormat;
+use Charcoal\Http\Client\Exception\SecureRequestException;
+use Charcoal\Http\Client\Policy\ClientPolicy;
 use Charcoal\Http\Client\Exception\RequestException;
 use Charcoal\Http\Client\Exception\ResponseException;
-use Charcoal\Http\Commons\Headers;
-use Charcoal\Http\Commons\HttpMethod;
-use Charcoal\Http\Commons\ReadOnlyPayload;
-use Charcoal\Http\Commons\UrlInfo;
-use Charcoal\Http\Commons\WritableHeaders;
-use Charcoal\Http\Commons\WritablePayload;
-use Charcoal\OOP\Traits\NoDumpTrait;
-use Charcoal\OOP\Traits\NotCloneableTrait;
-use Charcoal\OOP\Traits\NotSerializableTrait;
+use Charcoal\Http\Client\Support\CurlHelper;
+use Charcoal\Http\Commons\Body\Payload;
+use Charcoal\Http\Commons\Body\UnsafePayload;
+use Charcoal\Http\Commons\Body\WritablePayload;
+use Charcoal\Http\Commons\Data\UrlInfo;
+use Charcoal\Http\Commons\Enums\ContentType;
+use Charcoal\Http\Commons\Enums\HttpMethod;
+use Charcoal\Http\Commons\Header\Headers;
+use Charcoal\Http\Commons\Header\WritableHeaders;
 
 /**
  * Class Request
  * @package Charcoal\Http\Client
  */
-class Request
+readonly class Request
 {
-    public readonly UrlInfo $url;
-    public readonly WritableHeaders $headers;
-    public readonly WritablePayload $payload;
-    public readonly Buffer $body;
-
-    /** @var bool Send payload as application/json regardless of content-type */
-    public bool $contentTypeJSON = false;
-    /** @var bool Expect JSON body in response */
-    public bool $expectJSON = false;
-    /** @var bool If expectJSON is true, use this prop to ignore received content-type */
-    public bool $expectJSON_ignoreResContentType = false;
-
-    private ?AbstractAuthorization $auth = null;
-    private ?SslContext $ssl = null;
-    private ?int $timeOut = null;
-    private ?int $connectTimeOut = null;
-    private ?int $httpVersion = null;
-    private ?string $userAgent = null;
-    private ?string $proxyHost = null;
-    private ?int $proxyPort = null;
-    private ?string $proxyAuthUsername = null;
-    private ?string $proxyAuthPassword = null;
-
-    use NoDumpTrait;
-    use NotSerializableTrait;
-    use NotCloneableTrait;
+    public UrlInfo $url;
+    public WritableHeaders $headers;
+    public Payload|WritablePayload $payload;
+    public Buffer $body;
 
     /**
-     * @param \Charcoal\Http\Commons\HttpMethod $method
+     * @param ClientPolicy $policy
+     * @param HttpMethod $method
      * @param string $url
-     * @throws \Charcoal\Http\Client\Exception\RequestException
+     * @param Headers|array|null $headers
+     * @param Payload|array|null $payload
+     * @throws RequestException
      */
     public function __construct(
-        public readonly HttpMethod $method,
-        string                     $url
+        public ClientPolicy $policy,
+        public HttpMethod   $method,
+        string              $url,
+        Headers|array|null  $headers = null,
+        Payload|array|null  $payload = null,
     )
     {
-        $this->url = new UrlInfo($url);
-        if (!$this->url->scheme || !$this->url->host) {
+        try {
+            $this->url = new UrlInfo($url);
+            if (!$this->url->scheme || !$this->url->host) {
+                throw new \RuntimeException();
+            }
+        } catch (\Exception) {
             throw new RequestException('Cannot create cURL request without URL scheme and host');
         }
 
-        $this->headers = new WritableHeaders();
-        $this->payload = new WritablePayload();
+        try {
+            if ($headers instanceof WritableHeaders) {
+                $this->headers = $headers;
+            } else {
+                $this->headers = new WritableHeaders($this->policy->requestHeaders,
+                    $this->policy->requestHeaders->keyPolicy,
+                    new BatchEnvelope(match (true) {
+                        is_array($headers) => $headers,
+                        $headers instanceof Headers => $headers->getArray(),
+                        default => []
+                    }, ExceptionAction::Throw));
+            }
+        } catch (\Exception $e) {
+            throw new RequestException(ObjectHelper::baseClassName($e::class) . ": " . $e->getMessage(),
+                previous: $e);
+        }
+
         $this->body = new Buffer();
-    }
-
-    /**
-     * @param \Charcoal\Http\Client\Authorization\AbstractAuthorization $auth
-     * @return $this
-     */
-    public function useAuthorization(AbstractAuthorization $auth): static
-    {
-        $this->auth = $auth;
-        return $this;
-    }
-
-    /**
-     * @return SslContext
-     */
-    public function ssl(): SslContext
-    {
-        if (!$this->ssl) {
-            $this->ssl = new SslContext();
+        try {
+            if ($payload instanceof Payload) {
+                $this->payload = $payload;
+            } else {
+                $this->payload = new WritablePayload($this->policy->requestPayload,
+                    $this->policy->requestPayload->keyPolicy,
+                    new BatchEnvelope(is_array($payload) ? $payload : [], ExceptionAction::Throw));
+            }
+        } catch (\Exception $e) {
+            throw new RequestException(ObjectHelper::baseClassName($e::class) . ": " . $e->getMessage(),
+                previous: $e);
         }
-
-        return $this->ssl;
     }
 
     /**
-     * @return $this
-     */
-    public function ignoreSSL(): static
-    {
-        $this->ssl()->verify(false);
-        return $this;
-    }
-
-    /**
-     * @param int $version
-     * @return $this
-     */
-    public function useHttpVersion(int $version): static
-    {
-        if (!in_array($version, Curl::HTTP_VERSIONS)) {
-            throw new \OutOfBoundsException('Invalid query Http version');
-        }
-
-        $this->httpVersion = $version;
-        return $this;
-    }
-
-    /**
-     * @param string|null $agent
-     * @return $this
-     */
-    public function userAgent(?string $agent = null): static
-    {
-        $this->userAgent = $agent;
-        return $this;
-    }
-
-    /**
-     * @return $this
-     */
-    public function contentTypeJSON(): static
-    {
-        $this->contentTypeJSON = true;
-        return $this;
-    }
-
-    /**
-     * @param bool $ignoreReceivedContentType
-     * @return $this
-     */
-    public function expectJSON(bool $ignoreReceivedContentType = false): static
-    {
-        $this->expectJSON = true;
-        $this->expectJSON_ignoreResContentType = $ignoreReceivedContentType;
-        return $this;
-    }
-
-    /**
-     * @param int|null $timeOut
-     * @param int|null $connectTimeout
-     * @return $this
-     */
-    public function setTimeouts(?int $timeOut = null, ?int $connectTimeout = null): static
-    {
-        if ($timeOut > 0) {
-            $this->timeOut = $timeOut;
-        }
-
-        if ($connectTimeout > 0) {
-            $this->connectTimeOut = $connectTimeout;
-        }
-
-        return $this;
-    }
-
-    /**
-     * @param string $host
-     * @param int|null $port
-     * @return $this
-     */
-    public function useProxy(string $host, ?int $port = null): static
-    {
-        $this->proxyHost = $host;
-        $this->proxyPort = $port;
-        return $this;
-    }
-
-    /**
-     * @param string $username
-     * @param string $password
-     * @return $this
-     */
-    public function useProxyCredentials(string $username, string $password): static
-    {
-        $this->proxyAuthUsername = $username;
-        $this->proxyAuthPassword = $password;
-        return $this;
-    }
-
-    /**
-     * @return \Charcoal\Http\Client\Response
-     * @throws \Charcoal\Http\Client\Exception\ResponseException
+     * @return Response
+     * @throws RequestException
+     * @throws ResponseException
+     * @throws SecureRequestException
      */
     public function send(): Response
     {
         $ch = curl_init(); // Init cURL handler
         curl_setopt($ch, CURLOPT_URL, $this->url->complete); // Set URL
-        if ($this->httpVersion) {
-            curl_setopt($ch, CURLOPT_HTTP_VERSION, $this->httpVersion);
+        if ($this->policy->version) {
+            curl_setopt($ch, CURLOPT_HTTP_VERSION, CurlHelper::httpVersionForCurl($this->policy->version));
         }
 
         // Proxy Server?
-        if ($this->proxyHost) {
-            curl_setopt($ch, CURLOPT_PROXY, $this->proxyHost . ($this->proxyPort ? ":" . $this->proxyPort : ""));
-            if ($this->proxyAuthUsername) {
-                curl_setopt($ch, CURLOPT_PROXYAUTH, CURLAUTH_BASIC);
-                curl_setopt($ch, CURLOPT_PROXYUSERPWD, $this->proxyAuthUsername . ":" . $this->proxyAuthPassword);
-            }
-        }
+        $this->policy->proxyServer?->applyPolicy($ch, $this);
 
         // SSL?
         if (strtolower($this->url->scheme) === "https") {
-            $this->ssl()->registerCh($ch); // Register SSL/TLS context
-        }
+            if (!$this->policy->tlsContext) {
+                throw new SecureRequestException("TLS context is required to send HTTPS requests", 150);
+            }
 
-        // Content-type
-        $contentType = $this->headers->has("content-type") ?
-            trim(explode(";", $this->headers->get("content-type"))[0]) : null;
+            $this->policy->tlsContext->applyPolicy($ch, $this);
+        }
 
         // Payload
-        switch ($this->method->value) {
-            case "GET":
-                curl_setopt($ch, CURLOPT_HTTPGET, 1);
-                if ($this->payload->count()) {
-                    $sep = $this->url->query ? "&" : "?"; // Override URL
-                    curl_setopt($ch, CURLOPT_URL, $this->url->complete . $sep . http_build_query($this->payload->toArray()));
-                }
+        match ($this->method) {
+            HttpMethod::GET => RequestFormat::formatGet($this, $ch),
+            default => RequestFormat::formatCustom($this, $ch)
+        };
 
-                break;
-            default:
-                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $this->method->value);
-                $payloadIsJSON = $this->contentTypeJSON || $contentType === "application/json";
-                $payload = $this->body->raw();
-                if (!$payload) {
-                    if ($this->payload->count()) {
-                        $payload = $payloadIsJSON ?
-                            json_encode($this->payload->toArray()) : http_build_query($this->payload->toArray());
-                    }
-                }
-
-                if ($payload) {
-                    // Content-type JSON
-                    if ($payloadIsJSON) {
-                        // Content-type header
-                        if (!$this->headers->has("content-type")) {
-                            $this->headers->set("Content-type", "application/json; charset=utf-8");
-                        }
-
-                        // Content-length header
-                        if (!$this->headers->has("content-length")) {
-                            $this->headers->set("Content-length", strval(strlen($payload)));
-                        }
-                    }
-
-                    curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-                }
-
-                break;
-        }
+        // Authorization
+        $this->policy->authContext?->setCredentials($this);
 
         // Headers
         if ($this->headers->count()) {
-            $httpHeaders = [];
-            foreach ($this->headers->toArray() as $hn => $hv) {
-                $httpHeaders[] = $hn . ": " . $hv;
+            $headers = [];
+            foreach ($this->headers->getArray() as $n => $v) {
+                $headers[] = $n . ": " . $v;
             }
 
-            curl_setopt($ch, CURLOPT_HTTPHEADER, $httpHeaders);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         }
 
-        // Authorization
-        $this->auth?->registerCh($ch);
-
         // User agent
-        if ($this->userAgent) {
-            curl_setopt($ch, CURLOPT_USERAGENT, $this->userAgent);
+        if ($this->policy->userAgent && $this->policy->userAgent !== "") {
+            curl_setopt($ch, CURLOPT_USERAGENT, $this->policy->userAgent);
         }
 
         // Timeouts
-        if ($this->timeOut) {
-            curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeOut);
+        if ($this->policy->timeout > 0) {
+            curl_setopt($ch, CURLOPT_TIMEOUT, $this->policy->timeout);
         }
 
-        if ($this->connectTimeOut) {
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->connectTimeOut);
+        if ($this->policy->connectTimeout > 0) {
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->policy->connectTimeout);
         }
 
         // Response
@@ -337,37 +195,32 @@ class Request
         curl_close($ch);
 
         // Response Payload
-        $payload = [];
-        $responseIsJSON = is_string($responseType) && str_contains($responseType, 'json') || $this->expectJSON;
-        if ($responseIsJSON) {
-            if (!$this->expectJSON_ignoreResContentType) {
-                if (!is_string($responseType)) {
-                    throw new ResponseException('Invalid "Content-type" header received, expecting JSON', $responseCode);
-                }
+        $responseType = ContentType::find(strval($responseType)) ?? $this->policy->responseContentType;
+        if (!$responseType) {
+            throw new ResponseException('No "Content-type" header received');
+        }
 
-                if (strtolower(trim(explode(";", $responseType)[0])) !== "application/json") {
-                    throw new ResponseException(
-                        sprintf('Expected "application/json", got "%s"', $responseType),
-                        $responseCode
-                    );
-                }
-            }
-
-            // Decode JSON body
-            try {
-                $payload = json_decode($body, true, flags: JSON_THROW_ON_ERROR);
-            } catch (\JsonException $e) {
-                throw new ResponseException('Failed to decode JSON response', previous: $e);
-            }
+        $payload = $this->policy->encoder()::decode($body, $responseType) ?: [];
+        if ($payload) {
+            $body = null;
         }
 
         // Final CurlResponse instance
-        return new Response(
-            new Headers($responseHeaders),
-            new ReadOnlyPayload($payload),
-            (new Buffer($body))->readOnly(),
-            $responseCode
-        );
+        try {
+            return new Response(
+                new Headers($this->policy->responseHeaders,
+                    $this->policy->responseHeaders->keyPolicy,
+                    new BatchEnvelope($responseHeaders, ExceptionAction::Throw)),
+                new UnsafePayload($this->policy->responsePayload,
+                    $this->policy->responsePayload->keyPolicy,
+                    new BatchEnvelope($payload, ExceptionAction::Throw)),
+                (new Buffer($body ?: null))->readOnly(),
+                $responseCode
+            );
+        } catch (\Exception $e) {
+            throw new ResponseException(ObjectHelper::baseClassName($e::class) . ": " . $e->getMessage(),
+                previous: $e);
+        }
     }
 }
 
