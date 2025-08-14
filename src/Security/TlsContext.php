@@ -39,8 +39,8 @@ class TlsContext implements CurlConfigurableInterface
      */
     public function __construct(
         protected TlsVerify               $verify = TlsVerify::Enforce,
-        protected ?CaPath                 $caPath,
-        protected ?CertificateCredentials $certificate,
+        protected ?CaPath                 $caPath = null,
+        protected ?CertificateCredentials $certificate = null,
     )
     {
     }
