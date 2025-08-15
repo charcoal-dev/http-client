@@ -1,5 +1,8 @@
 # Charcoal HTTP Client
 
+[![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+
 The HTTP Client library provides a framework-native way to send HTTP requests in Charcoal, built atop HTTP Commons for
 consistent request/response handling. It offers a clean API for composing requests, managing headers, timeouts, and
 retries, with hooks for logging, tracing, and error handling so outbound calls integrate smoothly with the app’s
