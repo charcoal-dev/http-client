@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace Charcoal\Http\Client\Encoding;
 
-use Charcoal\Http\Client\Exception\RequestException;
+use Charcoal\Http\Client\Exceptions\RequestException;
 use Charcoal\Http\Client\Request;
 use Charcoal\Http\Commons\Enums\ContentType;
 

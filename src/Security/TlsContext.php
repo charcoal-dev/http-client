@@ -10,7 +10,7 @@ namespace Charcoal\Http\Client\Security;
 
 use Charcoal\Http\Client\Contracts\CurlConfigurableInterface;
 use Charcoal\Http\Client\Enums\TlsVerify;
-use Charcoal\Http\Client\Exception\SecureRequestException;
+use Charcoal\Http\Client\Exceptions\SecureRequestException;
 use Charcoal\Http\Client\Request;
 
 /**

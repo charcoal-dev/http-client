@@ -11,7 +11,7 @@ namespace Charcoal\Http\Client\Security;
 use Charcoal\Base\Support\Helpers\ObjectHelper;
 use Charcoal\Base\Traits\NoDumpTrait;
 use Charcoal\Http\Client\Contracts\CurlConfigurableInterface;
-use Charcoal\Http\Client\Exception\SecureRequestException;
+use Charcoal\Http\Client\Exceptions\SecureRequestException;
 use Charcoal\Http\Client\Request;
 use Charcoal\Http\Commons\Contracts\CredentialObjectInterface;
 use Charcoal\Http\Commons\Enums\Security\CredentialEncoding;
@@ -87,7 +87,7 @@ readonly class CertificateCredentials implements CurlConfigurableInterface
      * @param \CurlHandle $ch
      * @return void
      * @throws SecureRequestException
-     * @throws \Charcoal\Http\Commons\Exception\CredentialFileException
+     * @throws \Charcoal\Http\Commons\Exceptions\CredentialFileException
      */
     private function applyCertificate(\CurlHandle $ch): void
     {
@@ -124,7 +124,7 @@ readonly class CertificateCredentials implements CurlConfigurableInterface
      * @param \CurlHandle $ch
      * @return void
      * @throws SecureRequestException
-     * @throws \Charcoal\Http\Commons\Exception\CredentialFileException
+     * @throws \Charcoal\Http\Commons\Exceptions\CredentialFileException
      */
     private function applyPrivateKey(\CurlHandle $ch): void
     {
