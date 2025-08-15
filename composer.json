@@ -16,7 +16,7 @@
     "php": "^8.3",
     "ext-curl": "*",
     "charcoal-dev/buffers": "^0.2.1",
-    "charcoal-dev/http-commons": "^0.2.7"
+    "charcoal-dev/http-commons": "^0.2.6"
   },
   "autoload": {
     "psr-4": {
