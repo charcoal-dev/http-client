@@ -17,8 +17,10 @@ use Charcoal\Http\Commons\Enums\ContentType;
 use Charcoal\Http\Commons\Enums\Http;
 
 /**
- * Class ClientPolicy
- * @package Charcoal\Http\Client\Policy
+ * This class defines all the parameters and settings required to configure
+ * and manage the behavior of an HTTP client, including HTTP version,
+ * content types, headers, payloads, timeouts, authentication, and more.
+ * It supports inheritance of settings from a previous policy.
  */
 readonly class ClientPolicy
 {
@@ -35,6 +37,7 @@ readonly class ClientPolicy
     public string $userAgent;
     public int $timeout;
     public int $connectTimeout;
+
     /** @var class-string<ContentTypeEncoderInterface> */
     public string $encoder;
 
