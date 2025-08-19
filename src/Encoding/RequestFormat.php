@@ -48,7 +48,7 @@ class RequestFormat
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $request->method->value);
         $payload = $request->body->raw();
         if (!$payload) {
-            $payload = $request->policy->encoder()::encode($request->payload, $contentType);
+            $payload = $request->policy->encoder::encode($request->payload, $contentType);
         }
 
         if ($payload === false) {
@@ -57,7 +57,7 @@ class RequestFormat
 
         // Content-type header
         if (!$request->headers->has("Content-Type")) {
-            $contentTypeHeader = $request->policy->encoder()::headerFor($contentType);
+            $contentTypeHeader = $request->policy->encoder::headerFor($contentType);
             if ($contentTypeHeader) {
                 $request->headers->set("Content-Type", $contentTypeHeader);
             }

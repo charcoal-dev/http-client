@@ -200,7 +200,7 @@ readonly class Request
             throw new ResponseException('No "Content-type" header received');
         }
 
-        $payload = $this->policy->encoder()::decode($body, $responseType) ?: [];
+        $payload = $this->policy->encoder::decode($body, $responseType) ?: [];
         if ($payload) {
             $body = null;
         }

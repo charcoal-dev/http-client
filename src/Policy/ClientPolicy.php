@@ -20,67 +20,65 @@ use Charcoal\Http\Commons\Enums\Http;
  * Class ClientPolicy
  * @package Charcoal\Http\Client\Policy
  */
-class ClientPolicy
+readonly class ClientPolicy
 {
-    public ?Http $version = Http::Version2;
-    public ?ContentType $contentType = null;
-    public ?TlsContext $tlsContext = null;
-    public ?ClientAuthInterface $authContext = null;
-    public ?ProxyServer $proxyServer = null;
-
-    public string $userAgent = "Charcoal/HttpClient";
-    public int $timeout = 0;
-    public int $connectTimeout = 0;
-
-    public ?ContentType $responseContentType = null;
+    public Http $version;
+    public ContentType $contentType;
+    public ?TlsContext $tlsContext;
+    public ?ClientAuthInterface $authContext;
+    public ?ProxyServer $proxyServer;
+    public ?ContentType $responseContentType;
     public HeadersPolicy $requestHeaders;
     public HeadersPolicy $responseHeaders;
     public PayloadPolicy $requestPayload;
     public PayloadPolicy $responsePayload;
+    public string $userAgent;
+    public int $timeout;
+    public int $connectTimeout;
+    /** @var class-string<ContentTypeEncoderInterface> */
+    public string $encoder;
 
-    protected string $encoder = ContentTypeEncoderInterface::class;
-
-    /**
-     * @param ClientPolicy|null $previous
-     */
-    public function __construct(?ClientPolicy $previous = null)
+    public function __construct(
+        ?ClientPolicy        $previous = null,
+        ?Http                $version = null,
+        ?ContentType         $contentType = null,
+        ?TlsContext          $tlsContext = null,
+        ?ClientAuthInterface $authContext = null,
+        ?ProxyServer         $proxyServer = null,
+        ?string              $userAgent = null,
+        ?int                 $timeout = null,
+        ?int                 $connectTimeout = null,
+        ?ContentType         $responseContentType = null,
+        ?HeadersPolicy       $requestHeaders = null,
+        ?HeadersPolicy       $responseHeaders = null,
+        ?PayloadPolicy       $requestPayload = null,
+        ?PayloadPolicy       $responsePayload = null,
+        ?string              $encoder = null,
+    )
     {
-        $this->version = $previous?->version;
-        $this->contentType = $previous?->contentType;
-        $this->authContext = $previous?->authContext;
-        $this->proxyServer = $previous?->proxyServer;
-        $this->userAgent = $previous?->userAgent ?? $this->userAgent;
-        $this->timeout = $previous?->timeout ?? $this->timeout;
-        $this->connectTimeout = $previous?->connectTimeout ?? $this->connectTimeout;
-        $this->responseContentType = $previous?->responseContentType ?? $this->responseContentType;
-        $this->tlsContext = $previous?->tlsContext;
+        $this->version = $version ?? $previous?->version ?? Http::Version3;
+        $this->contentType = $contentType ?? $previous?->contentType;
+        $this->tlsContext = $tlsContext ?? $previous?->tlsContext;
+        $this->authContext = $authContext ?? $previous?->authContext;
+        $this->proxyServer = $proxyServer ?? $previous?->proxyServer;
+        $this->userAgent = $userAgent ?? $previous?->userAgent ?? "Charcoal/HttpClient";
+        $this->timeout = $timeout ?? $previous?->timeout ?? 0;
+        $this->connectTimeout = $connectTimeout ?? $previous?->connectTimeout ?? 0;
+        $this->responseContentType = $responseContentType ?? $previous?->responseContentType;
+        $this->requestHeaders = $requestHeaders ?? $previous->requestHeaders ?? new HeadersPolicy();
+        $this->requestPayload = $requestPayload ?? $previous->requestPayload ?? new PayloadPolicy();
+        $this->responseHeaders = $responseHeaders ?? $previous->responseHeaders ?? new HeadersPolicy();
+        $this->responsePayload = $responsePayload ?? $previous->responsePayload ?? new PayloadPolicy();
 
-        $this->requestHeaders = $previous->requestHeaders ?? new HeadersPolicy();
-        $this->requestPayload = $previous->requestPayload ?? new PayloadPolicy();
-        $this->responseHeaders = $previous->responseHeaders ?? new HeadersPolicy();
-        $this->responsePayload = $previous->responsePayload ?? new PayloadPolicy();
-        $this->encoder = $previous?->encoder() ?? BaseEncoder::class;
-    }
+        if ($encoder) {
+            if (!class_exists($encoder) ||
+                !is_subclass_of($encoder, ContentTypeEncoderInterface::class)) {
+                throw new \InvalidArgumentException("Invalid encoder classname");
+            }
 
-    /**
-     * @return class-string<ContentTypeEncoderInterface>
-     */
-    public function encoder(): string
-    {
-        return $this->encoder;
-    }
-
-    /**
-     * @param class-string<ContentTypeEncoderInterface> $classname
-     * @return void
-     */
-    public function changeEncoder(string $classname): void
-    {
-        if (!class_exists($classname) ||
-            !is_subclass_of($classname, ContentTypeEncoderInterface::class)) {
-            throw new \InvalidArgumentException("Invalid encoder classname");
+            $this->encoder = $encoder;
+        } else {
+            $this->encoder = $previous?->encoder ?? BaseEncoder::class;
         }
-
-        $this->encoder = $classname;
     }
 }
