@@ -61,7 +61,6 @@ readonly class ClientPolicy
     {
         $this->version = $version ?? $previous?->version ?? Http::Version3;
         $this->contentType = $contentType ?? $previous?->contentType;
-        $this->tlsContext = $tlsContext ?? $previous?->tlsContext;
         $this->authContext = $authContext ?? $previous?->authContext;
         $this->proxyServer = $proxyServer ?? $previous?->proxyServer;
         $this->userAgent = $userAgent ?? $previous?->userAgent ?? "Charcoal/HttpClient";
@@ -72,6 +71,9 @@ readonly class ClientPolicy
         $this->requestPayload = $requestPayload ?? $previous->requestPayload ?? new PayloadPolicy();
         $this->responseHeaders = $responseHeaders ?? $previous->responseHeaders ?? new HeadersPolicy();
         $this->responsePayload = $responsePayload ?? $previous->responsePayload ?? new PayloadPolicy();
+
+        $tlsContext = $tlsContext ?? $previous?->tlsContext ?? null;
+        $this->tlsContext = $tlsContext ? TlsContext::from($tlsContext) : null;
 
         if ($encoder) {
             if (!class_exists($encoder) ||
