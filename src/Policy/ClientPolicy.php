@@ -10,6 +10,7 @@ namespace Charcoal\Http\Client\Policy;
 
 use Charcoal\Http\Client\Contracts\ClientAuthInterface;
 use Charcoal\Http\Client\Contracts\ContentTypeEncoderInterface;
+use Charcoal\Http\Client\Encoding\BaseEncoder;
 use Charcoal\Http\Client\Proxy\ProxyServer;
 use Charcoal\Http\Client\Security\TlsContext;
 use Charcoal\Http\Commons\Enums\ContentType;
@@ -52,14 +53,13 @@ class ClientPolicy
         $this->timeout = $previous?->timeout ?? $this->timeout;
         $this->connectTimeout = $previous?->connectTimeout ?? $this->connectTimeout;
         $this->responseContentType = $previous?->responseContentType ?? $this->responseContentType;
-        $this->tlsContext = $previous ?
-            TlsContext::from($previous->tlsContext) : new TlsContext();
+        $this->tlsContext = $previous?->tlsContext;
 
         $this->requestHeaders = $previous->requestHeaders ?? new HeadersPolicy();
         $this->requestPayload = $previous->requestPayload ?? new PayloadPolicy();
         $this->responseHeaders = $previous->responseHeaders ?? new HeadersPolicy();
         $this->responsePayload = $previous->responsePayload ?? new PayloadPolicy();
-        $this->encoder = $previous->encoder();
+        $this->encoder = $previous?->encoder() ?? BaseEncoder::class;
     }
 
     /**
