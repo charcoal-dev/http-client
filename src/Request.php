@@ -12,15 +12,21 @@ use Charcoal\Base\Abstracts\Dataset\BatchEnvelope;
 use Charcoal\Base\Enums\ExceptionAction;
 use Charcoal\Base\Support\Helpers\ObjectHelper;
 use Charcoal\Buffers\Buffer;
+use Charcoal\Http\Client\Contracts\ClientAuthInterface;
+use Charcoal\Http\Client\Contracts\RequestObserverInterface;
+use Charcoal\Http\Client\Encoding\BaseEncoder;
 use Charcoal\Http\Client\Encoding\RequestFormat;
 use Charcoal\Http\Client\Exceptions\RequestException;
 use Charcoal\Http\Client\Exceptions\ResponseException;
 use Charcoal\Http\Client\Exceptions\SecureRequestException;
+use Charcoal\Http\Client\Proxy\ProxyServer;
+use Charcoal\Http\Client\Security\TlsContext;
 use Charcoal\Http\Client\Support\CurlHelper;
 use Charcoal\Http\Commons\Body\Payload;
 use Charcoal\Http\Commons\Body\UnsafePayload;
 use Charcoal\Http\Commons\Body\WritablePayload;
 use Charcoal\Http\Commons\Enums\ContentType;
+use Charcoal\Http\Commons\Enums\Http;
 use Charcoal\Http\Commons\Enums\HttpMethod;
 use Charcoal\Http\Commons\Header\Headers;
 use Charcoal\Http\Commons\Header\WritableHeaders;
@@ -30,12 +36,14 @@ use Charcoal\Http\Commons\Support\UrlInfo;
  * Class Request
  * @package Charcoal\Http\Client
  */
-readonly class Request
+final class Request
 {
-    public UrlInfo $url;
-    public WritableHeaders $headers;
-    public Payload|WritablePayload $payload;
-    public Buffer $body;
+    public readonly UrlInfo $url;
+    public readonly WritableHeaders $headers;
+    public readonly Payload|WritablePayload $payload;
+    public readonly Buffer $body;
+
+    protected ?RequestObserverInterface $observer = null;
 
     /**
      * @param ClientConfig $config
@@ -46,11 +54,11 @@ readonly class Request
      * @throws RequestException
      */
     public function __construct(
-        public ClientConfig $config,
-        public HttpMethod   $method,
-        string              $url,
-        Headers|array|null  $headers = null,
-        Payload|array|null  $payload = null,
+        protected ClientConfig     $config,
+        public readonly HttpMethod $method,
+        string                     $url,
+        Headers|array|null         $headers = null,
+        Payload|array|null         $payload = null,
     )
     {
         try {
@@ -82,8 +90,8 @@ readonly class Request
             if ($payload instanceof Payload) {
                 $this->payload = $payload;
             } else {
-                $this->payload = new WritablePayload(new BatchEnvelope(is_array($payload) ? $payload : [],
-                    ExceptionAction::Throw));
+                $this->payload = new WritablePayload(
+                    new BatchEnvelope(is_array($payload) ? $payload : [], ExceptionAction::Throw));
             }
         } catch (\Exception $e) {
             throw new RequestException(ObjectHelper::baseClassName($e::class) . ": " . $e->getMessage(),
@@ -92,12 +100,87 @@ readonly class Request
     }
 
     /**
+     * @param RequestObserverInterface $observer
+     * @return $this
+     */
+    public function observe(RequestObserverInterface $observer): self
+    {
+        $this->observer = $observer;
+        return $this;
+    }
+
+    /**
+     * @param Http|null $version
+     * @param ContentType|null $contentType
+     * @param TlsContext|null $tlsContext
+     * @param ClientAuthInterface|null $authContext
+     * @param ProxyServer|null $proxyServer
+     * @param string|null $userAgent
+     * @param int|null $timeout
+     * @param int|null $connectTimeout
+     * @param ContentType|null $responseContentType
+     * @param string|null $encoder
+     * @return $this
+     */
+    public function config(
+        ?Http                $version = Http::Version3,
+        ?ContentType         $contentType = null,
+        ?TlsContext          $tlsContext = null,
+        ?ClientAuthInterface $authContext = null,
+        ?ProxyServer         $proxyServer = null,
+        ?string              $userAgent = null,
+        ?int                 $timeout = null,
+        ?int                 $connectTimeout = null,
+        ?ContentType         $responseContentType = null,
+        ?string              $encoder = BaseEncoder::class,
+    ): self
+    {
+        $this->config = new ClientConfig(
+            $version,
+            $contentType,
+            $tlsContext,
+            $authContext,
+            $proxyServer,
+            $userAgent,
+            $timeout,
+            $connectTimeout,
+            $responseContentType,
+            $encoder,
+            $this->config
+        );
+
+        return $this;
+    }
+
+    /**
      * @return Response
      * @throws RequestException
      * @throws ResponseException
      * @throws SecureRequestException
+     * @throws \Throwable
      */
     public function send(): Response
+    {
+        if (!$this->observer) {
+            return $this->submit();
+        }
+
+        try {
+            $result = $this->submit();
+            $this->observer->onRequestResult($this, $result);
+            return $result;
+        } catch (\Throwable $t) {
+            $this->observer->onRequestResult($this, $t);
+            throw $t;
+        }
+    }
+
+    /**
+     * @throws RequestException
+     * @throws ResponseException
+     * @throws SecureRequestException
+     */
+    private function submit(): Response
     {
         $ch = curl_init(); // Init cURL handler
         curl_setopt($ch, CURLOPT_URL, $this->url->complete); // Set URL
