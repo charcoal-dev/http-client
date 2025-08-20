@@ -6,7 +6,7 @@
 
 declare(strict_types=1);
 
-namespace Charcoal\Http\Client\Policy;
+namespace Charcoal\Http\Client;
 
 use Charcoal\Http\Client\Contracts\ClientAuthInterface;
 use Charcoal\Http\Client\Contracts\ContentTypeEncoderInterface;

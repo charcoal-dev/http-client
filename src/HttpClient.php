@@ -10,7 +10,6 @@ namespace Charcoal\Http\Client;
 
 use Charcoal\Http\Client\Contracts\ClientAuthInterface;
 use Charcoal\Http\Client\Encoding\BaseEncoder;
-use Charcoal\Http\Client\Policy\ClientConfig;
 use Charcoal\Http\Client\Proxy\ProxyServer;
 use Charcoal\Http\Client\Security\TlsContext;
 use Charcoal\Http\Commons\Body\Payload;
