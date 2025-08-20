@@ -25,7 +25,7 @@ use Charcoal\Http\Commons\Enums\Http;
 readonly class ClientConfig
 {
     public Http $version;
-    public ContentType $contentType;
+    public ?ContentType $contentType;
     public ?TlsContext $tlsContext;
     public ?ClientAuthInterface $authContext;
     public ?ProxyServer $proxyServer;
