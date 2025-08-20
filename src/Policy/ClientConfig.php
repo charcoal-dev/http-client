@@ -22,7 +22,7 @@ use Charcoal\Http\Commons\Enums\Http;
  * content types, headers, payloads, timeouts, authentication, and more.
  * It supports inheritance of settings from a previous policy.
  */
-readonly class ClientPolicy
+readonly class ClientConfig
 {
     public Http $version;
     public ContentType $contentType;
@@ -30,10 +30,6 @@ readonly class ClientPolicy
     public ?ClientAuthInterface $authContext;
     public ?ProxyServer $proxyServer;
     public ?ContentType $responseContentType;
-    public HeadersPolicy $requestHeaders;
-    public HeadersPolicy $responseHeaders;
-    public PayloadPolicy $requestPayload;
-    public PayloadPolicy $responsePayload;
     public string $userAgent;
     public int $timeout;
     public int $connectTimeout;
@@ -42,7 +38,6 @@ readonly class ClientPolicy
     public string $encoder;
 
     public function __construct(
-        ?ClientPolicy        $previous = null,
         ?Http                $version = null,
         ?ContentType         $contentType = null,
         ?TlsContext          $tlsContext = null,
@@ -52,11 +47,8 @@ readonly class ClientPolicy
         ?int                 $timeout = null,
         ?int                 $connectTimeout = null,
         ?ContentType         $responseContentType = null,
-        ?HeadersPolicy       $requestHeaders = null,
-        ?HeadersPolicy       $responseHeaders = null,
-        ?PayloadPolicy       $requestPayload = null,
-        ?PayloadPolicy       $responsePayload = null,
         ?string              $encoder = null,
+        ?ClientConfig        $previous = null,
     )
     {
         $this->version = $version ?? $previous?->version ?? Http::Version3;
@@ -67,10 +59,6 @@ readonly class ClientPolicy
         $this->timeout = $timeout ?? $previous?->timeout ?? 0;
         $this->connectTimeout = $connectTimeout ?? $previous?->connectTimeout ?? 0;
         $this->responseContentType = $responseContentType ?? $previous?->responseContentType;
-        $this->requestHeaders = $requestHeaders ?? $previous->requestHeaders ?? new HeadersPolicy();
-        $this->requestPayload = $requestPayload ?? $previous->requestPayload ?? new PayloadPolicy();
-        $this->responseHeaders = $responseHeaders ?? $previous->responseHeaders ?? new HeadersPolicy();
-        $this->responsePayload = $responsePayload ?? $previous->responsePayload ?? new PayloadPolicy();
 
         $tlsContext = $tlsContext ?? $previous?->tlsContext ?? null;
         $this->tlsContext = $tlsContext ? TlsContext::from($tlsContext) : null;

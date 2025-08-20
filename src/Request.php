@@ -8,24 +8,24 @@ declare(strict_types=1);
 
 namespace Charcoal\Http\Client;
 
+use Charcoal\Base\Abstracts\Dataset\BatchEnvelope;
 use Charcoal\Base\Enums\ExceptionAction;
-use Charcoal\Base\Support\Data\BatchEnvelope;
 use Charcoal\Base\Support\Helpers\ObjectHelper;
 use Charcoal\Buffers\Buffer;
 use Charcoal\Http\Client\Encoding\RequestFormat;
 use Charcoal\Http\Client\Exceptions\SecureRequestException;
-use Charcoal\Http\Client\Policy\ClientPolicy;
+use Charcoal\Http\Client\Policy\ClientConfig;
 use Charcoal\Http\Client\Exceptions\RequestException;
 use Charcoal\Http\Client\Exceptions\ResponseException;
 use Charcoal\Http\Client\Support\CurlHelper;
 use Charcoal\Http\Commons\Body\Payload;
 use Charcoal\Http\Commons\Body\UnsafePayload;
 use Charcoal\Http\Commons\Body\WritablePayload;
-use Charcoal\Http\Commons\Data\UrlInfo;
 use Charcoal\Http\Commons\Enums\ContentType;
 use Charcoal\Http\Commons\Enums\HttpMethod;
 use Charcoal\Http\Commons\Header\Headers;
 use Charcoal\Http\Commons\Header\WritableHeaders;
+use Charcoal\Http\Commons\Support\UrlInfo;
 
 /**
  * Class Request
@@ -39,7 +39,7 @@ readonly class Request
     public Buffer $body;
 
     /**
-     * @param ClientPolicy $policy
+     * @param ClientConfig $policy
      * @param HttpMethod $method
      * @param string $url
      * @param Headers|array|null $headers
@@ -47,7 +47,7 @@ readonly class Request
      * @throws RequestException
      */
     public function __construct(
-        public ClientPolicy $policy,
+        public ClientConfig $policy,
         public HttpMethod   $method,
         string              $url,
         Headers|array|null  $headers = null,
@@ -67,13 +67,11 @@ readonly class Request
             if ($headers instanceof WritableHeaders) {
                 $this->headers = $headers;
             } else {
-                $this->headers = new WritableHeaders($this->policy->requestHeaders,
-                    $this->policy->requestHeaders->keyPolicy,
-                    new BatchEnvelope(match (true) {
-                        is_array($headers) => $headers,
-                        $headers instanceof Headers => $headers->getArray(),
-                        default => []
-                    }, ExceptionAction::Throw));
+                $this->headers = new WritableHeaders(new BatchEnvelope(match (true) {
+                    is_array($headers) => $headers,
+                    $headers instanceof Headers => $headers->getArray(),
+                    default => []
+                }, ExceptionAction::Throw));
             }
         } catch (\Exception $e) {
             throw new RequestException(ObjectHelper::baseClassName($e::class) . ": " . $e->getMessage(),
@@ -85,9 +83,8 @@ readonly class Request
             if ($payload instanceof Payload) {
                 $this->payload = $payload;
             } else {
-                $this->payload = new WritablePayload($this->policy->requestPayload,
-                    $this->policy->requestPayload->keyPolicy,
-                    new BatchEnvelope(is_array($payload) ? $payload : [], ExceptionAction::Throw));
+                $this->payload = new WritablePayload(new BatchEnvelope(is_array($payload) ? $payload : [],
+                    ExceptionAction::Throw));
             }
         } catch (\Exception $e) {
             throw new RequestException(ObjectHelper::baseClassName($e::class) . ": " . $e->getMessage(),
@@ -208,12 +205,8 @@ readonly class Request
         // Final CurlResponse instance
         try {
             return new Response(
-                new Headers($this->policy->responseHeaders,
-                    $this->policy->responseHeaders->keyPolicy,
-                    new BatchEnvelope($responseHeaders, ExceptionAction::Throw)),
-                new UnsafePayload($this->policy->responsePayload,
-                    $this->policy->responsePayload->keyPolicy,
-                    new BatchEnvelope($payload, ExceptionAction::Throw)),
+                new Headers(new BatchEnvelope($responseHeaders, ExceptionAction::Throw)),
+                new UnsafePayload(new BatchEnvelope($payload, ExceptionAction::Throw)),
                 (new Buffer($body ?: null))->readOnly(),
                 $responseCode
             );
