@@ -44,6 +44,7 @@ final class Request
     public readonly Buffer $body;
 
     protected ?RequestObserverInterface $observer = null;
+    protected ?array $observerContext = null;
 
     /**
      * @param ClientConfig $config
@@ -101,11 +102,13 @@ final class Request
 
     /**
      * @param RequestObserverInterface $observer
+     * @param array $context
      * @return $this
      */
-    public function observe(RequestObserverInterface $observer): self
+    public function observe(RequestObserverInterface $observer, array $context = []): self
     {
         $this->observer = $observer;
+        $this->observerContext = $context;
         return $this;
     }
 
@@ -167,10 +170,10 @@ final class Request
 
         try {
             $result = $this->submit();
-            $this->observer->onRequestResult($this, $result);
+            $this->observer->onRequestResult($this, $result, $this->observerContext);
             return $result;
         } catch (\Throwable $t) {
-            $this->observer->onRequestResult($this, $t);
+            $this->observer->onRequestResult($this, $t, $this->observerContext);
             throw $t;
         }
     }

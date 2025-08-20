@@ -20,7 +20,8 @@ interface RequestObserverInterface
     /**
      * @param Request $request
      * @param Response|\Throwable $result
+     * @param array $context
      * @return void
      */
-    public function onRequestResult(Request $request, Response|\Throwable $result): void;
+    public function onRequestResult(Request $request, Response|\Throwable $result, array $context): void;
 }
