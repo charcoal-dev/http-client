@@ -42,13 +42,13 @@ class RequestFormat
      */
     public static function formatCustom(Request $request, \CurlHandle $ch): void
     {
-        $contentType = $request->policy->contentType ??
+        $contentType = $request->config->contentType ??
             ContentType::find($request->headers->get("Content-Type") ?? "");
 
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $request->method->value);
         $payload = $request->body->raw();
         if (!$payload) {
-            $payload = $request->policy->encoder::encode($request->payload, $contentType);
+            $payload = $request->config->encoder::encode($request->payload, $contentType);
         }
 
         if ($payload === false) {
@@ -57,7 +57,7 @@ class RequestFormat
 
         // Content-type header
         if (!$request->headers->has("Content-Type")) {
-            $contentTypeHeader = $request->policy->encoder::headerFor($contentType);
+            $contentTypeHeader = $request->config->encoder::headerFor($contentType);
             if ($contentTypeHeader) {
                 $request->headers->set("Content-Type", $contentTypeHeader);
             }
