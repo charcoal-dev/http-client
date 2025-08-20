@@ -16,6 +16,7 @@ use Charcoal\Http\Client\Contracts\ClientAuthInterface;
 use Charcoal\Http\Client\Contracts\RequestObserverInterface;
 use Charcoal\Http\Client\Encoding\BaseEncoder;
 use Charcoal\Http\Client\Encoding\RequestFormat;
+use Charcoal\Http\Client\Exceptions\HttpClientException;
 use Charcoal\Http\Client\Exceptions\RequestException;
 use Charcoal\Http\Client\Exceptions\ResponseException;
 use Charcoal\Http\Client\Exceptions\SecureRequestException;
@@ -157,10 +158,7 @@ final class Request
 
     /**
      * @return Response
-     * @throws RequestException
-     * @throws ResponseException
-     * @throws SecureRequestException
-     * @throws \Throwable
+     * @throws HttpClientException
      */
     public function send(): Response
     {
@@ -174,7 +172,7 @@ final class Request
             return $result;
         } catch (\Throwable $t) {
             $this->observer->onRequestResult($this, $t, $this->observerContext);
-            throw $t;
+            throw new HttpClientException("Exception thrown during request, check previous", previous: $t);
         }
     }
 
