@@ -39,7 +39,7 @@ readonly class Request
     public Buffer $body;
 
     /**
-     * @param ClientConfig $policy
+     * @param ClientConfig $config
      * @param HttpMethod $method
      * @param string $url
      * @param Headers|array|null $headers
@@ -47,7 +47,7 @@ readonly class Request
      * @throws RequestException
      */
     public function __construct(
-        public ClientConfig $policy,
+        public ClientConfig $config,
         public HttpMethod   $method,
         string              $url,
         Headers|array|null  $headers = null,
@@ -102,20 +102,20 @@ readonly class Request
     {
         $ch = curl_init(); // Init cURL handler
         curl_setopt($ch, CURLOPT_URL, $this->url->complete); // Set URL
-        if ($this->policy->version) {
-            curl_setopt($ch, CURLOPT_HTTP_VERSION, CurlHelper::httpVersionForCurl($this->policy->version));
+        if ($this->config->version) {
+            curl_setopt($ch, CURLOPT_HTTP_VERSION, CurlHelper::httpVersionForCurl($this->config->version));
         }
 
         // Proxy Server?
-        $this->policy->proxyServer?->applyPolicy($ch, $this);
+        $this->config->proxyServer?->applyPolicy($ch, $this);
 
         // SSL?
         if (strtolower($this->url->scheme) === "https") {
-            if (!$this->policy->tlsContext) {
+            if (!$this->config->tlsContext) {
                 throw new SecureRequestException("TLS context is required to send HTTPS requests", 150);
             }
 
-            $this->policy->tlsContext->applyPolicy($ch, $this);
+            $this->config->tlsContext->applyPolicy($ch, $this);
         }
 
         // Payload
@@ -125,7 +125,7 @@ readonly class Request
         };
 
         // Authorization
-        $this->policy->authContext?->setCredentials($this);
+        $this->config->authContext?->setCredentials($this);
 
         // Headers
         if ($this->headers->count()) {
@@ -138,17 +138,17 @@ readonly class Request
         }
 
         // User agent
-        if ($this->policy->userAgent && $this->policy->userAgent !== "") {
-            curl_setopt($ch, CURLOPT_USERAGENT, $this->policy->userAgent);
+        if ($this->config->userAgent && $this->config->userAgent !== "") {
+            curl_setopt($ch, CURLOPT_USERAGENT, $this->config->userAgent);
         }
 
         // Timeouts
-        if ($this->policy->timeout > 0) {
-            curl_setopt($ch, CURLOPT_TIMEOUT, $this->policy->timeout);
+        if ($this->config->timeout > 0) {
+            curl_setopt($ch, CURLOPT_TIMEOUT, $this->config->timeout);
         }
 
-        if ($this->policy->connectTimeout > 0) {
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->policy->connectTimeout);
+        if ($this->config->connectTimeout > 0) {
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $this->config->connectTimeout);
         }
 
         // Response
@@ -192,12 +192,12 @@ readonly class Request
         curl_close($ch);
 
         // Response Payload
-        $responseType = ContentType::find(strval($responseType)) ?? $this->policy->responseContentType;
+        $responseType = ContentType::find(strval($responseType)) ?? $this->config->responseContentType;
         if (!$responseType) {
             throw new ResponseException('No "Content-type" header received');
         }
 
-        $payload = $this->policy->encoder::decode($body, $responseType) ?: [];
+        $payload = $this->config->encoder::decode($body, $responseType) ?: [];
         if ($payload) {
             $body = null;
         }
