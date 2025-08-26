@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace Charcoal\Http\Client\Support;
 
-use Charcoal\Http\Commons\Enums\Http;
+use Charcoal\Http\Commons\Enums\HttpProtocol;
 
 /**
  * Class Curl
@@ -32,15 +32,15 @@ class CurlHelper
     }
 
     /**
-     * @param Http $version
+     * @param HttpProtocol $version
      * @return int
      */
-    public static function httpVersionForCurl(Http $version): int
+    public static function httpVersionForCurl(HttpProtocol $version): int
     {
         return match ($version) {
-            Http::Version2 => CURL_HTTP_VERSION_2_0,
-            Http::Version1_1 => CURL_HTTP_VERSION_1_1,
-            Http::Version1 => CURL_HTTP_VERSION_1_0,
+            HttpProtocol::Version2 => CURL_HTTP_VERSION_2_0,
+            HttpProtocol::Version1_1 => CURL_HTTP_VERSION_1_1,
+            HttpProtocol::Version1 => CURL_HTTP_VERSION_1_0,
             default => CURL_HTTP_VERSION_NONE,
         };
     }

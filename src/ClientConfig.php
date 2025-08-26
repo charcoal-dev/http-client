@@ -14,7 +14,7 @@ use Charcoal\Http\Client\Encoding\BaseEncoder;
 use Charcoal\Http\Client\Proxy\ProxyServer;
 use Charcoal\Http\Client\Security\TlsContext;
 use Charcoal\Http\Commons\Enums\ContentType;
-use Charcoal\Http\Commons\Enums\Http;
+use Charcoal\Http\Commons\Enums\HttpProtocol;
 
 /**
  * This class defines all the parameters and settings required to configure
@@ -24,7 +24,7 @@ use Charcoal\Http\Commons\Enums\Http;
  */
 readonly class ClientConfig
 {
-    public Http $version;
+    public HttpProtocol $version;
     public ?ContentType $contentType;
     public ?TlsContext $tlsContext;
     public ?ClientAuthInterface $authContext;
@@ -38,7 +38,7 @@ readonly class ClientConfig
     public string $encoder;
 
     public function __construct(
-        ?Http                $version = null,
+        ?HttpProtocol        $version = null,
         ?ContentType         $contentType = null,
         ?TlsContext          $tlsContext = null,
         ?ClientAuthInterface $authContext = null,
@@ -51,7 +51,7 @@ readonly class ClientConfig
         ?ClientConfig        $previous = null,
     )
     {
-        $this->version = $version ?? $previous?->version ?? Http::Version3;
+        $this->version = $version ?? $previous?->version ?? HttpProtocol::Version3;
         $this->contentType = $contentType ?? $previous?->contentType;
         $this->authContext = $authContext ?? $previous?->authContext;
         $this->proxyServer = $proxyServer ?? $previous?->proxyServer;

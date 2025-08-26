@@ -12,8 +12,10 @@ use Charcoal\Http\Client\Contracts\CurlConfigurableInterface;
 use Charcoal\Http\Client\Request;
 
 /**
- * Class ProxyServer
- * @package Charcoal\Http\Client\Proxy
+ * Represents a proxy server configuration that can be applied to a cURL handle.
+ * This class implements the CurlConfigurableInterface and provides functionality
+ * to configure a cURL request with proxy server details, including host, port,
+ * username, and password.
  */
 readonly class ProxyServer implements CurlConfigurableInterface
 {

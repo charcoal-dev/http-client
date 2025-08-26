@@ -26,21 +26,24 @@ use Charcoal\Http\Client\Support\CurlHelper;
 use Charcoal\Http\Commons\Body\Payload;
 use Charcoal\Http\Commons\Body\UnsafePayload;
 use Charcoal\Http\Commons\Body\WritablePayload;
+use Charcoal\Http\Commons\Contracts\HeadersInterface;
+use Charcoal\Http\Commons\Contracts\PayloadInterface;
 use Charcoal\Http\Commons\Enums\ContentType;
-use Charcoal\Http\Commons\Enums\Http;
 use Charcoal\Http\Commons\Enums\HttpMethod;
-use Charcoal\Http\Commons\Header\Headers;
-use Charcoal\Http\Commons\Header\WritableHeaders;
-use Charcoal\Http\Commons\Support\UrlInfo;
+use Charcoal\Http\Commons\Enums\HttpProtocol;
+use Charcoal\Http\Commons\Headers\Headers;
+use Charcoal\Http\Commons\Headers\HeadersImmutable;
+use Charcoal\Http\Commons\Url\UrlInfo;
 
 /**
- * Class Request
- * @package Charcoal\Http\Client
+ * Represents an HTTP Request, allowing configuration of headers, payload, and additional
+ * settings for execution via cURL. The class supports both GET and custom HTTP methods
+ * while ensuring secure communication for HTTPS schemes.
  */
 final class Request
 {
     public readonly UrlInfo $url;
-    public readonly WritableHeaders $headers;
+    public readonly Headers $headers;
     public readonly Payload|WritablePayload $payload;
     public readonly Buffer $body;
 
@@ -48,19 +51,14 @@ final class Request
     protected ?array $observerContext = null;
 
     /**
-     * @param ClientConfig $config
-     * @param HttpMethod $method
-     * @param string $url
-     * @param Headers|array|null $headers
-     * @param Payload|array|null $payload
      * @throws RequestException
      */
     public function __construct(
-        protected ClientConfig     $config,
-        public readonly HttpMethod $method,
-        string                     $url,
-        Headers|array|null         $headers = null,
-        Payload|array|null         $payload = null,
+        public ClientConfig         $config,
+        public readonly HttpMethod  $method,
+        string                      $url,
+        HeadersInterface|array|null $headers = null,
+        PayloadInterface|array|null $payload = null,
     )
     {
         try {
@@ -73,12 +71,12 @@ final class Request
         }
 
         try {
-            if ($headers instanceof WritableHeaders) {
+            if ($headers instanceof Headers) {
                 $this->headers = $headers;
             } else {
-                $this->headers = new WritableHeaders(new BatchEnvelope(match (true) {
+                $this->headers = new Headers(new BatchEnvelope(match (true) {
                     is_array($headers) => $headers,
-                    $headers instanceof Headers => $headers->getArray(),
+                    $headers instanceof HeadersImmutable => $headers->getArray(),
                     default => []
                 }, ExceptionAction::Throw));
             }
@@ -114,20 +112,10 @@ final class Request
     }
 
     /**
-     * @param Http|null $version
-     * @param ContentType|null $contentType
-     * @param TlsContext|null $tlsContext
-     * @param ClientAuthInterface|null $authContext
-     * @param ProxyServer|null $proxyServer
-     * @param string|null $userAgent
-     * @param int|null $timeout
-     * @param int|null $connectTimeout
-     * @param ContentType|null $responseContentType
-     * @param string|null $encoder
      * @return $this
      */
     public function config(
-        ?Http                $version = Http::Version3,
+        ?HttpProtocol        $version = HttpProtocol::Version3,
         ?ContentType         $contentType = null,
         ?TlsContext          $tlsContext = null,
         ?ClientAuthInterface $authContext = null,
@@ -288,7 +276,7 @@ final class Request
         // Final CurlResponse instance
         try {
             return new Response(
-                new Headers(new BatchEnvelope($responseHeaders, ExceptionAction::Throw)),
+                (new Headers(new BatchEnvelope($responseHeaders, ExceptionAction::Throw)))->toImmutable(),
                 new UnsafePayload(new BatchEnvelope($payload, ExceptionAction::Throw)),
                 (new Buffer($body ?: null))->readOnly(),
                 $responseCode
