@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace Charcoal\Http\Client;
 
-use Charcoal\Buffers\Buffer;
+use Charcoal\Buffers\BufferImmutable;
 use Charcoal\Http\Commons\Body\UnsafePayload;
 use Charcoal\Http\Commons\Headers\HeadersImmutable;
 
@@ -22,7 +22,7 @@ final readonly class Response
     public function __construct(
         public HeadersImmutable $headers,
         public UnsafePayload    $payload,
-        public Buffer           $body,
+        public BufferImmutable  $body,
         public int              $statusCode
     )
     {

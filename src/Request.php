@@ -8,10 +8,12 @@ declare(strict_types=1);
 
 namespace Charcoal\Http\Client;
 
-use Charcoal\Base\Abstracts\Dataset\BatchEnvelope;
-use Charcoal\Base\Enums\ExceptionAction;
-use Charcoal\Base\Support\Helpers\ObjectHelper;
+use Charcoal\Base\Dataset\BatchEnvelope;
+use Charcoal\Base\Objects\ObjectHelper;
 use Charcoal\Buffers\Buffer;
+use Charcoal\Buffers\BufferImmutable;
+use Charcoal\Contracts\Buffers\ReadableBufferInterface;
+use Charcoal\Contracts\Errors\ExceptionAction;
 use Charcoal\Http\Client\Contracts\ClientAuthInterface;
 use Charcoal\Http\Client\Contracts\RequestObserverInterface;
 use Charcoal\Http\Client\Encoding\BaseEncoder;
@@ -45,7 +47,7 @@ final class Request
     public readonly UrlInfo $url;
     public readonly Headers $headers;
     public readonly Payload|WritablePayload $payload;
-    public readonly Buffer $body;
+    public readonly ReadableBufferInterface $body;
 
     protected ?RequestObserverInterface $observer = null;
     protected ?array $observerContext = null;
@@ -278,7 +280,7 @@ final class Request
             return new Response(
                 (new Headers(new BatchEnvelope($responseHeaders, ExceptionAction::Throw)))->toImmutable(),
                 new UnsafePayload(new BatchEnvelope($payload, ExceptionAction::Throw)),
-                (new Buffer($body ?: null))->readOnly(),
+                (new BufferImmutable($body ?: null)),
                 $responseCode
             );
         } catch (\Exception $e) {

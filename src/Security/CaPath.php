@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace Charcoal\Http\Client\Security;
 
-use Charcoal\Base\Traits\NoDumpTrait;
+use Charcoal\Base\Objects\Traits\NoDumpTrait;
 use Charcoal\Http\Client\Contracts\CurlConfigurableInterface;
 use Charcoal\Http\Client\Exceptions\SecureRequestException;
 use Charcoal\Http\Client\Request;

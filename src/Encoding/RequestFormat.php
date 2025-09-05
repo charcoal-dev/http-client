@@ -46,7 +46,7 @@ class RequestFormat
             ContentType::find($request->headers->get("Content-Type") ?? "");
 
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $request->method->value);
-        $payload = $request->body->raw();
+        $payload = $request->body->bytes();
         if (!$payload) {
             $payload = $request->config->encoder::encode($request->payload, $contentType);
         }
